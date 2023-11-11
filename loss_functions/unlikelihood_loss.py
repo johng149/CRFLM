@@ -1,3 +1,5 @@
+# https://github.com/facebookresearch/unlikelihood_training/blob/main/custom/candidate_penalty_ce_loss.py
+
 import torch
 from torch.functional import F
 from math import ceil
