@@ -37,6 +37,11 @@ class KroneckerLinear(Module):
                                                         A.size(1)*B.size(1),
                                                         A.size(2)*B.size(2))
         return res
+    
+    def forward(self, x):
+        p = self.kronecker_product_einsum_batched(self.a, self.s)
+        weight = torch.sum(p, dim=0)
+        return x @ weight.T
 
 def is_worth_it(factor, in_dim, out_dim):
     """

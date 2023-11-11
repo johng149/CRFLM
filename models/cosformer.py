@@ -9,7 +9,7 @@ from torch import Tensor
 from typing import Optional
 from torch import nn
 
-from phm import phm
+from .phm import phm
 
 class CosformerAttention(nn.Module):
     """
@@ -73,8 +73,6 @@ class CosformerAttention(nn.Module):
             E is the embedding dimension.
             value (Tensor): `(S, N, E)` where S is the source sequence length, N is the batch size,
             E is the embedding dimension.
-            attn_mask (Optional[Tensor], optional): typically used to implement causal attention, 
-            where the mask prevents the attention from looking forward in time (default: None).
         """
         if key == None:
             key = query
