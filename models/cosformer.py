@@ -10,6 +10,7 @@ from typing import Optional
 from torch import nn
 
 from .phm import phm
+from torch.nn import LayerNorm
 
 class CosformerAttention(nn.Module):
     """
@@ -23,7 +24,6 @@ class CosformerAttention(nn.Module):
         kdim=None,
         vdim=None,
         dropout_rate=0.0,
-        has_outproj=True,
         act_fun="relu",
         phm_factor=4 # reasonable and probably safe default
     ):
@@ -32,16 +32,21 @@ class CosformerAttention(nn.Module):
         self.kdim = kdim if kdim is not None else embed_dim
         self.vdim = vdim if kdim is not None else embed_dim
         self.num_heads = num_heads
-        self.has_outproj = has_outproj
         self.act_fun = self.get_act_fun(act_fun)
         # q, k, v projection
         self.k_proj = phm(phm_factor, self.kdim, embed_dim)
         self.v_proj = phm(phm_factor, self.vdim, embed_dim)
         self.q_proj = phm(phm_factor, embed_dim, embed_dim)
         # outprojection
-        self.out_proj = phm(phm_factor, embed_dim, embed_dim) if has_outproj else None
+        self.out_proj = phm(phm_factor, embed_dim, embed_dim)
         # dropout rate
         self.dropout_rate = dropout_rate
+
+        # layer norm before attention
+        self.norm1 = LayerNorm(embed_dim)
+
+        # layer norm after attention
+        self.norm2 = LayerNorm(embed_dim)
 
         # removed causal since not needed for this task
 
@@ -76,8 +81,13 @@ class CosformerAttention(nn.Module):
         """
         if key == None:
             key = query
+        else:
+            key = self.norm1(key)
         if value == None:
             value = query
+        else:
+            value = self.norm1(value)
+        query = self.norm1(query)
         
         num_heads = self.num_heads
         tgt_len, bsz, embed_dim = query.size()
@@ -122,8 +132,9 @@ class CosformerAttention(nn.Module):
         # (N * h, L, d) -> (L, N * h, d) -> (L, N, E)
         attn_output = attn_output.transpose(0, 1).contiguous().view(tgt_len, bsz, -1)
         # L, N, E
-        if self.has_outproj:
-            attn_output = self.out_proj(attn_output)
+        attn_output += query
+        attn_output = self.norm2(attn_output)
+        attn_output = self.out_proj(attn_output) + attn_output
 
         return attn_output
 
