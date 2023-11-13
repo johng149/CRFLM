@@ -1,6 +1,7 @@
 from torch.nn import Module, Linear, LayerNorm, ModuleList
 from .helix import Helix, Endcap, Downsizer, SingleStrand
 from .reader import Reader
+from .phm import phm
 
 class CustomModel(Module):
 
@@ -20,7 +21,7 @@ class CustomModel(Module):
         self.downsizer = Downsizer(embedding_dim, num_heads, target_len, phm_factor)
         self.single_strands = ModuleList([SingleStrand(embedding_dim, num_heads, phm_factor) for _ in range(num_single_strand_layers)])
         self.norm = LayerNorm(embedding_dim)
-        self.out = Linear(embedding_dim, vocab_size)
+        self.out = phm(phm_factor, embedding_dim, vocab_size)
 
     def forward(self, query, context):
         # input is seq_len x batch_size
