@@ -39,7 +39,7 @@ class CustomModel(Module):
         result = self.out(result).transpose(0,1)
         return result
     
-class CRFLayer(Module):
+class CRFModel(Module):
 
     def __init__(self, model, vocab_size, beam, low_rank, padding_idx):
         super().__init__()
