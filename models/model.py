@@ -2,6 +2,7 @@ from torch.nn import Module, Linear, LayerNorm, ModuleList
 from .helix import Helix, Endcap, Downsizer, SingleStrand
 from .reader import Reader
 from .phm import phm
+from .crf import CRF
 
 class CustomModel(Module):
 
@@ -37,3 +38,21 @@ class CustomModel(Module):
         result = self.norm(x)
         result = self.out(result).transpose(0,1)
         return result
+    
+class CRFLayer(Module):
+
+    def __init__(self, model, vocab_size, beam, low_rank, padding_idx):
+        super().__init__()
+        self.model = model
+        self.crf = CRF(vocab_size, beam, low_rank)
+        self.padding_idx = padding_idx
+
+    def forward(self, query, context, target):
+        logits = self.model(query, context)
+        mask = ~target.eq(self.padding_idx)
+        crf_loss = self.crf(logits, target, mask) * -1
+        return logits, crf_loss
+    
+    def inference(self, query, context):
+        logits = self.model(query, context)
+        return self.crf.viterbi_decode(logits)
