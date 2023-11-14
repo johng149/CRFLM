@@ -19,14 +19,14 @@
     },
     "context": {
       "feature": {
-        "dtype": "uint16",
+        "dtype": "int32",
         "_type": "Value"
       },
       "_type": "Sequence"
     },
     "response": {
       "feature": {
-        "dtype": "uint16",
+        "dtype": "int32",
         "_type": "Value"
       },
       "_type": "Sequence"
@@ -37,7 +37,7 @@
     },
     "question": {
       "feature": {
-        "dtype": "uint16",
+        "dtype": "int32",
         "_type": "Value"
       },
       "_type": "Sequence"
