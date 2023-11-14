@@ -16,7 +16,7 @@ class CRF(nn.Module):
         self.E1 = nn.Embedding(num_embedding, low_rank)
         self.E2 = nn.Embedding(num_embedding, low_rank)
 
-        self.vocb = num_embedding
+        self.vocab_size = num_embedding
         self.rank = low_rank
         self.beam = beam_size
 

@@ -6,7 +6,7 @@ from .crf import CRF
 
 class CustomModel(Module):
 
-    def __init__(self, embedding_dim, num_heads, target_len, vocab_size, num_helix_layers=2, num_single_strand_layers=2, phm_factor=4):
+    def __init__(self, embedding_dim, num_heads, target_len, vocab_size, num_helix_layers=2, num_single_strand_layers=2, phm_factor=4, lm_head_phm_factor=2):
         super().__init__()
         self.embedding_dim = embedding_dim
         self.num_heads = num_heads
@@ -22,7 +22,7 @@ class CustomModel(Module):
         self.downsizer = Downsizer(embedding_dim, num_heads, target_len, phm_factor)
         self.single_strands = ModuleList([SingleStrand(embedding_dim, num_heads, phm_factor) for _ in range(num_single_strand_layers)])
         self.norm = LayerNorm(embedding_dim)
-        self.out = phm(phm_factor, embedding_dim, vocab_size)
+        self.out = phm(lm_head_phm_factor, embedding_dim, vocab_size)
 
     def forward(self, query, context):
         # input is seq_len x batch_size
@@ -50,8 +50,8 @@ class CRFLayer(Module):
     def forward(self, query, context, target):
         logits = self.model(query, context)
         mask = ~target.eq(self.padding_idx)
-        crf_loss = self.crf(logits, target, mask) * -1
-        return logits, crf_loss
+        crf_losses = self.crf(logits, target, mask) * -1
+        return logits, crf_losses
     
     def inference(self, query, context):
         logits = self.model(query, context)
