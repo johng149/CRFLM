@@ -177,3 +177,6 @@ pyrightconfig.json
 
 # ignore venv dir "crf" at project root
 /crf
+
+# ignore data folder
+/data
