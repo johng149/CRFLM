@@ -180,3 +180,6 @@ pyrightconfig.json
 
 # ignore data folder
 /data
+
+# ignore checkpoints folder
+/checkpoints
