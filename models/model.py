@@ -1,3 +1,4 @@
+import torch
 from torch.nn import Module, Linear, LayerNorm, ModuleList
 from .helix import Helix, Endcap, Downsizer, SingleStrand
 from .reader import Reader
@@ -8,6 +9,16 @@ class CustomModel(Module):
 
     def __init__(self, embedding_dim, num_heads, target_len, vocab_size, num_helix_layers=2, num_single_strand_layers=2, phm_factor=4, lm_head_phm_factor=2):
         super().__init__()
+        self.kwargs = {
+            'embedding_dim': embedding_dim,
+            'num_heads': num_heads,
+            'target_len': target_len,
+            'vocab_size': vocab_size,
+            'num_helix_layers': num_helix_layers,
+            'num_single_strand_layers': num_single_strand_layers,
+            'phm_factor': phm_factor,
+            'lm_head_phm_factor': lm_head_phm_factor
+        }
         self.embedding_dim = embedding_dim
         self.num_heads = num_heads
         self.target_len = target_len
@@ -42,7 +53,23 @@ class CustomModel(Module):
 class CRFModel(Module):
 
     def __init__(self, model, vocab_size, beam, low_rank, padding_idx):
+        # we need the padding idx to make it so generating padding idx
+        # does not contribute to the score.
+        # remember, we are calculating the numerator and denominator
+        # of a sequence for the CRF and we are trying to maximize
+        # the probability of the sequence that we are given and produced
+        # the numerator
+        # by masking padding idx, we are making it so padding tokens do
+        # not contribute to the score
+        # to skip this step, set the padding idx to a value that is
+        # not in the vocab
         super().__init__()
+        self.kwargs = {
+            "vocab_size": vocab_size,
+            "beam": beam,
+            "low_rank": low_rank,
+            "padding_idx": padding_idx
+        }
         self.model = model
         self.crf = CRF(vocab_size, beam, low_rank)
         self.padding_idx = padding_idx
