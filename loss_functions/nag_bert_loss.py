@@ -1,21 +1,12 @@
 import torch
 
-def nag_bert_loss(logits, crf_losses, answer, pad_idx, nll_loss_weight=0.5):
-    batch_size, seq_len = answer.shape
-    logits_unbind = torch.unbind(logits.transpose(0, 1), dim=0)
-    answer_unbind = torch.unbind(answer, dim=1)
-    nll = torch.nn.NLLLoss(ignore_index=pad_idx, reduction='none')
-    nll_losses = []
-    for i in range(seq_len):
-        curr_logits = logits_unbind[i]
-        curr_answer = answer_unbind[i].view(batch_size)
-        curr_nll = nll(curr_logits, curr_answer)
-        nll_losses.append(curr_nll)
-    nll_losses = torch.stack(nll_losses, dim=1)
-    answer_padding_matrix = ~answer.eq(pad_idx)
-    answer_padding_matrix = answer_padding_matrix.type(nll_losses.type())
-    nll_losses = nll_losses * answer_padding_matrix
-    nll_losses_sum = nll_losses.sum(dim=-1)
-    loss = nll_losses_sum*nll_loss_weight + crf_losses
-    loss = torch.sum(loss) / torch.sum(answer_padding_matrix)
-    return loss
+def custom_loss(logits, targets, crf_losses, vocab_size, pad_idx, nll_loss_weight, answer_len):
+    bt_size, _ = targets.shape
+    cross_entropy_loss = torch.nn.functional.cross_entropy(logits.reshape(-1, vocab_size), targets.view(-1), ignore_index=pad_idx, reduction='none').view(bt_size, answer_len)
+    target_padding_matrix = ~targets.eq(pad_idx)
+    target_padding_matrix = target_padding_matrix.type(cross_entropy_loss.type())
+    cross_entropy_loss = cross_entropy_loss * target_padding_matrix
+    summed_loss = cross_entropy_loss.sum(dim = -1)
+    one_step_train_loss = crf_losses + nll_loss_weight * summed_loss
+    scaled_train_loss = torch.sum(one_step_train_loss) / torch.sum(target_padding_matrix)
+    return scaled_train_loss
